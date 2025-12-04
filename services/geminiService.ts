@@ -1,4 +1,4 @@
-import { TrainInfo, TrainType } from "../types";
+import { TrainInfo, TrainType } from "../types.ts";
 
 // Static schedule service based on official Taoyuan Metro timetable (A1 Departure)
 // Reference: User provided screenshot matching official website data.

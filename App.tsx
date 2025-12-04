@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, MapPin, Clock, AlertCircle, TrainFront, ChevronRight, ExternalLink, Save, ArrowRight } from 'lucide-react';
-import { fetchTrainSchedule } from './services/geminiService';
-import { TrainInfo, TrainType } from './types';
+import { fetchTrainSchedule } from './services/geminiService.ts';
+import { TrainInfo, TrainType } from './types.ts';
 
 const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
