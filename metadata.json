@@ -1,0 +1,5 @@
+{
+  "name": "Taoyuan Metro Tracker (A1-A8-A9)",
+  "description": "Real-time departure schedule for Taoyuan Airport MRT from A1 (Taipei Main Station) to A8 (Chang Gung Hospital) and A9 (Linkou), optimized for mobile.",
+  "requestFramePermissions": []
+}
