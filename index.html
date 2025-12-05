@@ -346,7 +346,7 @@
                 >
                     {!isExp && <div className="absolute -right-12 -top-12 w-32 h-32 bg-blue-400/20 dark:bg-blue-600/20 rounded-full blur-3xl pointer-events-none opacity-60"></div>}
                     
-                    {isNext && (<div className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 ${theme.badge}`}>即將發車</div>)}
+                    {isNext && (<div className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full z-10 ${theme.badge}`}>{isDeparting ? '已發車' : '即將發車'}</div>)}
                     
                     {/* Header Row */}
                     <div className="flex justify-between items-start mb-5 relative z-0">
@@ -360,7 +360,7 @@
                              {isNext ? (
                                 <div className="flex items-baseline gap-1.5 justify-end">
                                     <span className={`font-bold leading-none tabular-nums tracking-tight ${isDeparting ? 'text-3xl' : 'text-4xl'} ${isExp ? 'text-yellow-300 drop-shadow-md' : 'text-blue-600 dark:text-blue-400'}`}>
-                                        {isDeparting ? '即將發車' : train.minutesUntil}
+                                        {isDeparting ? '已發車' : train.minutesUntil}
                                     </span>
                                     {train.minutesUntil > 0 && <span className={`text-xs font-bold ${theme.timeSub}`}>分後</span>}
                                 </div>
