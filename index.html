@@ -3,14 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>A1 機捷時刻表</title>
+    <title>A1 機捷時刻表 | 台北車站發車資訊</title>
     
     <!-- PWA Settings -->
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="機捷A1">
-    <meta name="description" content="桃園機場捷運 A1 台北車站發車時刻表">
+    
+    <!-- SEO & Open Graph (New) -->
+    <meta name="description" content="桃園機場捷運 A1 台北車站即時發車時刻表，區分直達車與普通車，提供 A8/A9 轉乘資訊。">
+    <meta property="og:title" content="A1 機捷時刻表">
+    <meta property="og:description" content="秒開、好讀、免安裝。專為 A1 台北車站旅客設計的時刻表 App。">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="機捷 A1 Helper">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +25,9 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    },
                     colors: {
                         express: { light: '#f5f3ff', DEFAULT: '#9333ea', dark: '#581c87' },
                         commuter: { light: '#eff6ff', DEFAULT: '#2563eb', dark: '#1e3a8a' }
@@ -26,6 +35,8 @@
                     animation: {
                         'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'slide-up': 'slide-up 0.3s ease-out',
+                        'shimmer': 'shimmer 1.5s infinite linear',
+                        'bounce-subtle': 'bounce-subtle 2s infinite',
                     },
                     keyframes: {
                         'pulse-glow': {
@@ -35,6 +46,14 @@
                         'slide-up': {
                             '0%': { transform: 'translateY(100%)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        'shimmer': {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        'bounce-subtle': {
+                            '0%, 100%': { transform: 'translateY(-5%)' },
+                            '50%': { transform: 'translateY(0)' }
                         }
                     },
                     spacing: {
@@ -61,6 +80,8 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         body { transition: background-color 0.3s ease, color 0.3s ease; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        
         .glass-nav {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -79,7 +100,14 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
         import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
         import ReactDOM from 'react-dom/client';
-        import { Train, Clock, RefreshCw, Info, ArrowRight, ChevronRight, Filter, Zap, Moon, Sun, ChevronsRight, Circle } from 'lucide-react';
+        import { Train, Clock, RefreshCw, Info, ArrowRight, ChevronRight, Filter, Zap, Moon, Sun, ChevronsRight, Circle, CloudMoon, Share, PlusSquare, X } from 'lucide-react';
+
+        // --- Utils ---
+        const vibrate = () => {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                navigator.vibrate(10); // Light haptic feedback
+            }
+        };
 
         // --- Types & Services ---
         type TrainType = 'Express' | 'Commuter';
@@ -123,10 +151,92 @@
             }
         }
 
-        // --- Header ---
+        // --- Components ---
+
+        const InstallPrompt = () => {
+            const [show, setShow] = useState(false);
+            const [isIOS, setIsIOS] = useState(false);
+
+            useEffect(() => {
+                // Fix: Removed 'as any' casting to prevent Babel parse errors
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator['standalone'];
+                const isIOSCheck = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window['MSStream'];
+                setIsIOS(isIOSCheck);
+                
+                // Show prompt if iOS, not standalone, and haven't closed it before
+                const hasClosed = localStorage.getItem('installPromptClosed');
+                if (isIOSCheck && !isStandalone && !hasClosed) {
+                    // Delay show for 2 seconds to not annoy immediately
+                    const timer = setTimeout(() => setShow(true), 2000);
+                    return () => clearTimeout(timer);
+                }
+            }, []);
+
+            const close = () => {
+                setShow(false);
+                localStorage.setItem('installPromptClosed', 'true');
+            };
+
+            if (!show) return null;
+
+            return (
+                <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe-bottom animate-slide-up">
+                    <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 relative">
+                        <button onClick={close} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <X className="w-5 h-5" />
+                        </button>
+                        <div className="flex gap-4">
+                            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0">
+                                <span className="font-bold text-xl">A1</span>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 dark:text-white">加入主畫面</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                                    點擊下方工具列的 <Share className="w-4 h-4 inline mx-0.5" /> 分享按鈕，然後選擇「加入主畫面」<PlusSquare className="w-4 h-4 inline mx-0.5" />。
+                                </p>
+                            </div>
+                        </div>
+                        {/* Little triangle pointing down */}
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-[-8px] w-4 h-4 bg-white/95 dark:bg-slate-800/95 rotate-45 border-b border-r border-slate-200 dark:border-slate-700"></div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SkeletonCard = () => (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700/50 my-3 overflow-hidden relative">
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-slate-100/50 dark:via-slate-700/30 to-transparent z-10"></div>
+                <div className="flex justify-between items-center mb-4">
+                    <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                    <div className="flex flex-col items-end gap-1">
+                        <div className="h-8 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        <div className="h-3 w-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1 mt-2">
+                    {[1,2,3].map(i => (
+                        <div key={i} className="flex flex-col items-center gap-2">
+                            <div className="h-3 w-10 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                            <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
         const Header = ({ refresh, showExpressOnly, setShowExpressOnly, isDark, toggleTheme }) => {
             const [time, setTime] = useState(new Date());
             useEffect(() => { const t = setInterval(()=>setTime(new Date()),1000); return ()=>clearInterval(t); }, []);
+
+            const handleToggleFilter = () => {
+                vibrate();
+                setShowExpressOnly(!showExpressOnly);
+            };
+
+            const handleToggleTheme = () => {
+                vibrate();
+                toggleTheme();
+            };
 
             return (
                 <header className="glass-nav fixed top-0 left-0 right-0 z-30 px-4 pt-safe-top pb-3 transition-colors duration-300">
@@ -138,16 +248,24 @@
                             <span className="font-bold text-lg tracking-wide text-slate-800 dark:text-slate-100">機捷 A1</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="font-mono text-2xl font-bold tracking-tight text-slate-700 dark:text-slate-200">
+                            <span className="font-mono text-2xl font-bold tracking-tight text-slate-700 dark:text-slate-200 tabular-nums">
                                 {time.toLocaleTimeString('en-GB', { hour12: false, hour:'2-digit', minute:'2-digit' })}
                             </span>
-                            <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                            <button 
+                                onClick={handleToggleTheme} 
+                                className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors active:scale-90 duration-150"
+                                aria-label="切換深色模式"
+                            >
                                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                             </button>
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                        <button onClick={() => setShowExpressOnly(!showExpressOnly)} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${showExpressOnly ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-600/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
+                        <button 
+                            onClick={handleToggleFilter} 
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border active:scale-95 ${showExpressOnly ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-600/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                            aria-pressed={showExpressOnly}
+                        >
                             <Zap className={`w-4 h-4 ${showExpressOnly ? 'fill-current' : ''}`} />
                             <span>{showExpressOnly ? '只看直達' : '全部車種'}</span>
                         </button>
@@ -173,27 +291,28 @@
 
         const TrainCard = ({ train, isNext }) => {
             const isExp = train.type === 'Express';
-            
-            const expressTheme = {
-                wrapper: 'bg-gradient-to-br from-purple-600 to-indigo-700 dark:from-purple-800 dark:to-indigo-900 text-white shadow-lg shadow-purple-500/20 border-t border-white/10',
-                labelBg: 'bg-white/20 text-white backdrop-blur-sm',
-                timeMain: 'text-white',
-                timeSub: 'text-purple-100/70',
-                badge: 'bg-amber-400 text-purple-900',
-                divider: 'divide-white/10'
-            };
+            const theme = isExp 
+                ? { 
+                    wrapper: 'bg-gradient-to-br from-purple-600 to-indigo-700 dark:from-purple-800 dark:to-indigo-900 text-white shadow-lg shadow-purple-500/20 border-t border-white/10',
+                    labelBg: 'bg-white/20 text-white backdrop-blur-sm',
+                    timeMain: 'text-white',
+                    timeSub: 'text-purple-100/70',
+                    badge: 'bg-amber-400 text-purple-900',
+                    divider: 'divide-white/10'
+                  }
+                : { 
+                    wrapper: 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 shadow-sm relative overflow-hidden group',
+                    labelBg: 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold',
+                    timeMain: 'text-slate-800 dark:text-slate-100',
+                    timeSub: 'text-slate-400 dark:text-slate-500',
+                    badge: 'bg-blue-600 text-white',
+                    divider: 'divide-slate-100 dark:divide-slate-700/50'
+                  };
 
-            const commuterTheme = {
-                wrapper: 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 shadow-sm relative overflow-hidden group',
-                labelBg: 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold',
-                timeMain: 'text-slate-800 dark:text-slate-100',
-                timeSub: 'text-slate-400 dark:text-slate-500',
-                badge: 'bg-blue-600 text-white',
-                divider: 'divide-slate-100 dark:divide-slate-700/50'
-            };
-
-            const theme = isExp ? expressTheme : commuterTheme;
             const CommuterDecor = () => (<div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-2xl pointer-events-none opacity-60 group-hover:opacity-100 transition-opacity"></div>);
+            
+            const showProgress = isNext && train.minutesUntil <= 10 && train.minutesUntil > 0;
+            const progressPercent = showProgress ? Math.max(0, Math.min(100, (train.minutesUntil / 10) * 100)) : 100;
             const nextStyle = isNext ? `scale-[1.02] z-10 my-4 shadow-xl ${isExp ? 'ring-2 ring-purple-400/50 animate-pulse-glow' : 'ring-2 ring-blue-400/30'}` : 'scale-100 my-3 opacity-100';
 
             return (
@@ -210,7 +329,7 @@
                         <div className={`text-right ${isNext ? 'mt-8' : ''}`}>
                              {isNext ? (
                                 <div className="flex items-baseline gap-1 justify-end">
-                                    <span className={`font-bold text-3xl leading-none ${isExp ? 'text-yellow-300' : 'text-blue-600 dark:text-blue-400'}`}>
+                                    <span className={`font-bold text-3xl leading-none tabular-nums ${isExp ? 'text-yellow-300' : 'text-blue-600 dark:text-blue-400'}`}>
                                         {train.minutesUntil === 0 ? '進站中' : train.minutesUntil}
                                     </span>
                                     {train.minutesUntil > 0 && <span className={`text-xs font-bold ${theme.timeSub}`}>分後</span>}
@@ -221,11 +340,16 @@
                         </div>
                     </div>
                     <div className={`grid grid-cols-3 gap-1 text-center divide-x relative z-0 ${theme.divider}`}>
-                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A1 發車</span><span className={`text-xl font-mono font-bold ${theme.timeMain}`}>{train.departureTime}</span></div>
-                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A8 抵達</span><span className={`text-lg font-mono font-semibold ${theme.timeMain}`}>{train.arrivalA8}</span></div>
-                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A9 抵達</span><span className={`text-lg font-mono font-semibold ${theme.timeMain}`}>{train.arrivalA9}</span></div>
+                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A1 發車</span><span className={`text-xl font-mono font-bold tabular-nums ${theme.timeMain}`}>{train.departureTime}</span></div>
+                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A8 抵達</span><span className={`text-lg font-mono font-semibold tabular-nums ${theme.timeMain}`}>{train.arrivalA8}</span></div>
+                        <div><span className={`text-[10px] block mb-1 font-medium uppercase tracking-wider ${theme.timeSub}`}>A9 抵達</span><span className={`text-lg font-mono font-semibold tabular-nums ${theme.timeMain}`}>{train.arrivalA9}</span></div>
                     </div>
                     {isExp && <TransferVisual />}
+                    {showProgress && (
+                        <div className="mt-4 h-1 w-full bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-1000 ${isExp ? 'bg-yellow-300' : 'bg-blue-400'}`} style={{ width: `${progressPercent}%` }}></div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -244,6 +368,7 @@
             };
             const handleTouchEnd = () => {
                 if (pullY > 50) {
+                    vibrate(); // Vibrate on refresh trigger
                     setRefreshing(true);
                     setPullY(50);
                     onRefresh().finally(() => { setRefreshing(false); setPullY(0); });
@@ -263,7 +388,7 @@
                 else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
             }, [isDark]);
 
-            // --- GENERATE CLEAN ICON ---
+            // Clean Icon Generation
             useEffect(() => {
                 const canvas = document.createElement('canvas');
                 canvas.width = 512;
@@ -314,7 +439,7 @@
                         setSchedule(ScheduleService.enrichSchedule(daily, new Date()));
                         setLoading(false);
                         resolve();
-                    }, 600);
+                    }, 800);
                 });
             }, [daily]);
 
@@ -335,16 +460,32 @@
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-md border border-slate-100 dark:border-slate-700 ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className={`w-4 h-4 text-purple-600 dark:text-purple-400`} /></div>
                         </div>
                         <div className="px-4 space-y-3 transition-transform duration-200 min-h-[500px]" style={{ transform: `translateY(${pullY}px)` }}>
-                            {loading && !refreshing ? <div className="text-center pt-20 text-slate-400 dark:text-slate-600 text-sm">載入中...</div> : displaySchedule.length > 0 ? (
+                            {loading && !refreshing ? (
+                                <>
+                                    <SkeletonCard />
+                                    <SkeletonCard />
+                                    <SkeletonCard />
+                                    <div className="text-center pt-4 text-slate-400 dark:text-slate-600 text-sm">更新資料中...</div>
+                                </>
+                            ) : displaySchedule.length > 0 ? (
                                 <>
                                     {displaySchedule.map((t, i) => <TrainCard key={t.id} train={t} isNext={i===0} />)}
-                                    <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-600">{showExpressOnly ? '已顯示即將發車的直達班次' : '已顯示所有班次'}</div>
+                                    <div className="text-center pt-8 pb-4 opacity-50">
+                                        <div className="text-[10px] text-slate-400 dark:text-slate-600 font-mono tracking-widest uppercase">{showExpressOnly ? 'Express Only' : 'All Trains'}</div>
+                                    </div>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center justify-center pt-24 text-slate-500 dark:text-slate-400 opacity-60"><Info className="w-12 h-12 mb-2 opacity-50" /><p className="text-sm">目前無符合條件的班次</p>{showExpressOnly && <button onClick={()=>setShowExpressOnly(false)} className="mt-2 text-indigo-500 dark:text-indigo-400 text-xs underline">顯示所有車種</button>}</div>
+                                <div className="flex flex-col items-center justify-center pt-32 text-slate-500 dark:text-slate-400 opacity-60">
+                                    <CloudMoon className="w-16 h-16 mb-4 opacity-50 text-indigo-300" />
+                                    <p className="text-base font-bold text-slate-600 dark:text-slate-300">今日營運已結束</p>
+                                    <p className="text-sm mt-1">首班車將於明日 05:30 發車</p>
+                                    {showExpressOnly && <button onClick={()=>setShowExpressOnly(false)} className="mt-4 px-4 py-2 bg-white dark:bg-slate-800 rounded-full shadow-sm text-indigo-500 dark:text-indigo-400 text-xs font-bold border border-slate-200 dark:border-slate-700">顯示所有車種</button>}
+                                </div>
                             )}
                         </div>
                     </main>
+                    
+                    <InstallPrompt />
                 </div>
             );
         };
@@ -353,5 +494,3 @@
     </script>
 </body>
 </html>
-
-
