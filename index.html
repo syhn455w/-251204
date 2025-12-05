@@ -82,6 +82,7 @@
             height: 100%;
             position: fixed; /* Lock body for iOS */
             width: 100%;
+            overscroll-behavior-x: none; /* Prevent horizontal swipe navigation */
         }
         .tabular-nums { font-variant-numeric: tabular-nums; }
         
@@ -311,6 +312,7 @@
             const isExp = train.type === 'Express';
             const showProgress = isNext && train.minutesUntil <= 10 && train.minutesUntil > 0;
             const progressPercent = showProgress ? Math.max(0, Math.min(100, (train.minutesUntil / 10) * 100)) : 100;
+            const isDeparting = train.minutesUntil <= 0;
 
             const theme = isExp 
                 ? { 
@@ -352,8 +354,8 @@
                         <div className={`text-right ${isNext ? 'mt-8' : ''}`}>
                              {isNext ? (
                                 <div className="flex items-baseline gap-1.5 justify-end">
-                                    <span className={`font-bold text-4xl leading-none tabular-nums tracking-tight ${isExp ? 'text-yellow-300 drop-shadow-md' : 'text-blue-600 dark:text-blue-400'}`}>
-                                        {train.minutesUntil === 0 ? '進站' : train.minutesUntil}
+                                    <span className={`font-bold leading-none tabular-nums tracking-tight ${isDeparting ? 'text-3xl' : 'text-4xl'} ${isExp ? 'text-yellow-300 drop-shadow-md' : 'text-blue-600 dark:text-blue-400'}`}>
+                                        {isDeparting ? '即將發車' : train.minutesUntil}
                                     </span>
                                     {train.minutesUntil > 0 && <span className={`text-xs font-bold ${theme.timeSub}`}>分後</span>}
                                 </div>
@@ -483,7 +485,7 @@
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto relative pt-36 pb-24 no-scrollbar scroll-smooth" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-24 no-scrollbar scroll-smooth touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.3s' : 'transform 0.1s' }}
                     >
