@@ -78,6 +78,10 @@
             transition: background-color 0.5s ease; 
             background-attachment: fixed;
             -webkit-font-smoothing: antialiased;
+            overflow: hidden; /* Prevent body scroll, force internal scroll */
+            height: 100%;
+            position: fixed; /* Lock body for iOS */
+            width: 100%;
         }
         .tabular-nums { font-variant-numeric: tabular-nums; }
         
@@ -161,10 +165,6 @@
         };
 
         // --- Types & Services ---
-        // type TrainType = 'Express' | 'Commuter';
-        // interface TrainSchedule { id: string; departureTime: string; type: TrainType; }
-        // interface EnrichedTrain extends TrainSchedule { arrivalA8: string; arrivalA9: string; minutesUntil: number; }
-
         class ScheduleService {
             static addMinutes(timeStr, mins) {
                 const [h, m] = timeStr.split(':').map(Number);
@@ -216,10 +216,8 @@
         const InstallPrompt = () => {
             const [show, setShow] = useState(false);
             useEffect(() => {
-                // Fixed: Removed 'as any' casting to prevent Babel parse errors
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator['standalone'];
                 const isIOSCheck = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window['MSStream'];
-                
                 const hasClosed = localStorage.getItem('installPromptClosed');
                 if (isIOSCheck && !isStandalone && !hasClosed) {
                     setTimeout(() => setShow(true), 3000);
@@ -479,7 +477,7 @@
             }, [schedule, showExpressOnly]);
 
             return (
-                <div className="min-h-screen flex flex-col max-w-md mx-auto shadow-2xl relative overflow-hidden backdrop-blur-3xl">
+                <div className="h-[100dvh] w-full flex flex-col max-w-md mx-auto shadow-2xl relative overflow-hidden backdrop-blur-3xl">
                     <Background />
                     <Header refresh={fetchSchedule} showExpressOnly={showExpressOnly} setShowExpressOnly={setShowExpressOnly} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} isScrolled={isScrolled} />
                     
