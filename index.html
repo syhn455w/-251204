@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="antialiased">
+<html lang="zh-TW" class="antialiased bg-slate-50 dark:bg-slate-950">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -74,16 +74,21 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Force full height and prevent overscroll on body to fix white gaps */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+        
         body { 
             transition: background-color 0.5s ease; 
-            background-attachment: fixed;
             -webkit-font-smoothing: antialiased;
-            overflow: hidden; /* Prevent body scroll, force internal scroll */
-            height: 100%;
-            position: fixed; /* Lock body for iOS */
-            width: 100%;
-            overscroll-behavior-x: none; /* Prevent horizontal swipe navigation */
+            overscroll-behavior: none;
         }
+        
         .tabular-nums { font-variant-numeric: tabular-nums; }
         
         /* FIX: Define keyframes globally for inline styles to work reliably */
@@ -479,13 +484,13 @@
             }, [schedule, showExpressOnly]);
 
             return (
-                <div className="h-[100dvh] w-full flex flex-col max-w-md mx-auto shadow-2xl relative overflow-hidden backdrop-blur-3xl">
+                <div className="absolute inset-0 flex flex-col max-w-md mx-auto shadow-2xl overflow-hidden backdrop-blur-3xl">
                     <Background />
                     <Header refresh={fetchSchedule} showExpressOnly={showExpressOnly} setShowExpressOnly={setShowExpressOnly} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} isScrolled={isScrolled} />
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-24 no-scrollbar scroll-smooth touch-pan-y" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-20 no-scrollbar scroll-smooth touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.3s' : 'transform 0.1s' }}
                     >
