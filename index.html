@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>A1 機捷時刻表 | 台北車站發車資訊</title>
+    <title>機捷A1 PWA</title>
     
-    <!-- PWA Settings -->
+    <!-- PWA Settings (Dynamic Manifest will handle the rest) -->
     <meta id="theme-color-meta" name="theme-color" content="#FFFFFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="機捷A1">
     
     <!-- Tailwind CSS -->
@@ -68,7 +68,7 @@
         
         .tabular-nums { font-variant-numeric: tabular-nums; }
 
-        /* Boutique Gradient Background (Static for Performance) */
+        /* Boutique Gradient Background */
         .bg-boutique-light {
             background: radial-gradient(circle at 0% 0%, #E0E7FF 0%, #F8FAFC 40%, #FFFFFF 100%);
         }
@@ -98,7 +98,7 @@
             box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.4);
         }
 
-        /* Nav Blur - Only here */
+        /* Nav Blur */
         .nav-blur {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
@@ -124,7 +124,6 @@
 </head>
 <body class="bg-boutique-light dark:bg-boutique-dark text-slate-900 dark:text-white">
     
-    <!-- Minimal Preloader -->
     <div id="preloader">
         <div class="w-16 h-16 bg-black dark:bg-white rounded-2xl flex items-center justify-center mb-4 loader-pulse">
             <span class="text-white dark:text-black font-bold text-2xl tracking-tighter">A1</span>
@@ -136,7 +135,7 @@
     <script type="text/babel" data-type="module" data-presets="typescript,react">
         import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
         import ReactDOM from 'react-dom/client';
-        import { Train, RefreshCw, ChevronRight, Zap, Moon, Sun, Circle, Share, ArrowUpRight, Clock } from 'lucide-react';
+        import { Train, RefreshCw, ChevronRight, Zap, Moon, Sun, Circle, Share, ArrowUpRight, Clock, Download } from 'lucide-react';
 
         const vibrate = () => { if (navigator.vibrate) navigator.vibrate(5); };
 
@@ -178,30 +177,81 @@
         }
 
         const InstallPrompt = () => {
-            const [show, setShow] = useState(false);
+            const [showIOS, setShowIOS] = useState(false);
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
+
             useEffect(() => {
+                // Check if running in standalone mode
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator['standalone'];
+                if (isStandalone) return;
+
+                // Android / Desktop Install Prompt
+                const handler = (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                };
+                window.addEventListener('beforeinstallprompt', handler);
+
+                // iOS Instructions
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window['MSStream'];
                 const closed = localStorage.getItem('installPromptClosed');
-                if (isIOS && !isStandalone && !closed) setTimeout(() => setShow(true), 2000);
+                if (isIOS && !closed) {
+                    setTimeout(() => setShowIOS(true), 2000);
+                }
+
+                return () => window.removeEventListener('beforeinstallprompt', handler);
             }, []);
-            if (!show) return null;
-            return (
-                <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe-bottom animate-slide-up-fade">
-                    <div className="bg-white/95 dark:bg-[#1C1C1E] backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-black/5 dark:border-white/10 relative">
-                        <button onClick={() => {setShow(false); localStorage.setItem('installPromptClosed', 'true');}} className="absolute top-4 right-4 p-2 opacity-50 hover:opacity-100"><span className="text-xl leading-none">&times;</span></button>
-                        <div className="flex gap-4 items-center pr-8">
-                            <div className="w-12 h-12 bg-black dark:bg-white rounded-xl flex items-center justify-center shrink-0">
-                                <span className="text-white dark:text-black font-bold text-lg">A1</span>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-sm">加入主畫面，秒開 App</h3>
-                                <p className="text-xs opacity-60 mt-0.5">點擊 <Share className="w-3 h-3 inline"/> 分享 > 加入主畫面</p>
+
+            const handleInstallClick = async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    setDeferredPrompt(null);
+                }
+            };
+
+            const closeIOS = () => {
+                setShowIOS(false);
+                localStorage.setItem('installPromptClosed', 'true');
+            };
+
+            // Android/PC Button (Fixed at bottom)
+            if (deferredPrompt) {
+                return (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-slide-up-fade">
+                        <button 
+                            onClick={handleInstallClick}
+                            className="bg-black dark:bg-white text-white dark:text-black font-bold py-3 px-6 rounded-full shadow-xl flex items-center gap-2 active:scale-95 transition-transform"
+                        >
+                            <Download className="w-4 h-4" />
+                            安裝 App
+                        </button>
+                    </div>
+                );
+            }
+
+            // iOS Instructions
+            if (showIOS) {
+                return (
+                    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe-bottom animate-slide-up-fade">
+                        <div className="bg-white/95 dark:bg-[#1C1C1E] backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-black/5 dark:border-white/10 relative">
+                            <button onClick={closeIOS} className="absolute top-4 right-4 p-2 opacity-50 hover:opacity-100"><span className="text-xl leading-none">&times;</span></button>
+                            <div className="flex gap-4 items-center pr-8">
+                                <div className="w-12 h-12 bg-black dark:bg-white rounded-xl flex items-center justify-center shrink-0">
+                                    <span className="text-white dark:text-black font-bold text-lg">A1</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm">安裝到主畫面</h3>
+                                    <p className="text-xs opacity-60 mt-0.5">點擊 <Share className="w-3 h-3 inline"/> 分享 > 加入主畫面</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            );
+                );
+            }
+
+            return null;
         };
 
         const Header = ({ showExpressOnly, setShowExpressOnly, isDark, toggleTheme }) => {
@@ -250,7 +300,6 @@
             const isExp = train.type === 'Express';
             const isDeparting = train.minutesUntil <= 0;
             
-            // Clean, High-Contrast Design
             const cardClass = isExp 
                 ? 'card-express-bg text-white border-none' 
                 : 'card-minimal text-slate-900 dark:text-slate-100';
@@ -311,7 +360,6 @@
             const [schedule, setSchedule] = useState([]);
             const [loading, setLoading] = useState(true);
             const [isDark, setIsDark] = useState(() => { 
-                // Default to system preference if no saved setting
                 const saved = localStorage.getItem('theme');
                 if (saved) return saved === 'dark';
                 return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -343,14 +391,27 @@
 
             useEffect(() => { localStorage.setItem('filterExpress', showExpressOnly); }, [showExpressOnly]);
 
-            // Icon Generation (Runs once)
+            // --- Dynamic PWA Manifest Generation ---
             useEffect(() => {
                 const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d');
                 ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 512, 512);
                 ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 240px -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('A1', 256, 256);
                 const iconUrl = canvas.toDataURL('image/png');
-                const setLink = (rel) => { let l = document.createElement('link'); l.rel = rel; l.href = iconUrl; document.head.appendChild(l); };
-                setLink('icon'); setLink('apple-touch-icon');
+                
+                const setLink = (rel, url) => { let l = document.querySelector(`link[rel="${rel}"]`); if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); } l.href = url; };
+                setLink('icon', iconUrl); setLink('apple-touch-icon', iconUrl);
+                
+                const manifest = { 
+                    "name": "機捷A1", 
+                    "short_name": "機捷A1", 
+                    "start_url": ".", 
+                    "display": "standalone", 
+                    "background_color": "#000000", 
+                    "theme_color": "#000000", 
+                    "icons": [{ "src": iconUrl, "sizes": "512x512", "type": "image/png" }] 
+                };
+                const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'}));
+                setLink('manifest', manifestURL);
             }, []);
 
             // Data
@@ -370,15 +431,8 @@
             const [refreshing, setRefreshing] = useState(false);
             const startY = useRef(0);
             const handleTouchStart = (e) => { if (scrollRef.current.scrollTop === 0) startY.current = e.touches[0].clientY; };
-            const handleTouchMove = (e) => {
-                if (scrollRef.current.scrollTop <= 0 && !refreshing) {
-                    const diff = e.touches[0].clientY - startY.current;
-                    if (diff > 0) setPullY(Math.min(diff * 0.4, 80));
-                }
-            };
-            const handleTouchEnd = () => {
-                if (pullY > 50) { vibrate(); setRefreshing(true); setPullY(50); fetchSchedule().finally(() => { setRefreshing(false); setPullY(0); }); } else { setPullY(0); }
-            };
+            const handleTouchMove = (e) => { if (scrollRef.current.scrollTop <= 0 && !refreshing) { const diff = e.touches[0].clientY - startY.current; if (diff > 0) setPullY(Math.min(diff * 0.4, 80)); } };
+            const handleTouchEnd = () => { if (pullY > 50) { vibrate(); setRefreshing(true); setPullY(50); fetchSchedule().finally(() => { setRefreshing(false); setPullY(0); }); } else { setPullY(0); } };
 
             const displaySchedule = useMemo(() => {
                 let list = schedule;
