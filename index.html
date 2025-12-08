@@ -70,10 +70,12 @@
         .bg-boutique-light {
             background: radial-gradient(circle at 0% 0%, #E0E7FF 0%, #F8FAFC 40%, #FFFFFF 100%);
             background-attachment: fixed;
+            background-size: cover;
         }
         .dark .bg-boutique-dark {
             background: radial-gradient(circle at 50% 0%, #1E1B4B 0%, #000000 60%);
             background-attachment: fixed;
+            background-size: cover;
         }
 
         /* Minimalist Card */
@@ -122,7 +124,7 @@
         @keyframes pulse-logo { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.95); } }
     </style>
 </head>
-<body class="text-slate-900 dark:text-white">
+<body class="bg-boutique-light dark:bg-boutique-dark text-slate-900 dark:text-white">
     
     <div id="preloader">
         <div class="w-16 h-16 bg-black dark:bg-white rounded-2xl flex items-center justify-center mb-4 loader-pulse">
@@ -426,7 +428,7 @@
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-24 no-scrollbar touch-pan-y" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-[calc(env(safe-area-inset-bottom)+1rem)] no-scrollbar touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out' }}
                     >
@@ -434,7 +436,7 @@
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className="w-4 h-4 text-slate-900 dark:text-white" /></div>
                         </div>
 
-                        <div className="px-5 space-y-2 transition-transform duration-300 min-h-full" style={{ transform: `translateY(${pullY}px)` }}>
+                        <div className="px-5 space-y-2 transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
                             {loading && !refreshing ? (
                                 <div className="space-y-4 pt-2">
                                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
