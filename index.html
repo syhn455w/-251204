@@ -348,6 +348,7 @@
             const [showExpressOnly, setShowExpressOnly] = useState(() => localStorage.getItem('filterExpress') === 'true');
             const scrollRef = useRef(null);
 
+            // Preloader fade out
             useEffect(() => {
                 const preloader = document.getElementById('preloader');
                 if (preloader) { 
@@ -355,6 +356,7 @@
                 }
             }, []);
 
+            // Theme Effect
             useEffect(() => {
                 const meta = document.getElementById('theme-color-meta');
                 if (isDark) { 
@@ -370,18 +372,30 @@
 
             useEffect(() => { localStorage.setItem('filterExpress', showExpressOnly); }, [showExpressOnly]);
 
+            // --- Dynamic PWA Manifest Generation ---
             useEffect(() => {
                 const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 512; const ctx = canvas.getContext('2d');
                 ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 512, 512);
                 ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 240px -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('A1', 256, 256);
                 const iconUrl = canvas.toDataURL('image/png');
+                
                 const setLink = (rel, url) => { let l = document.querySelector(`link[rel="${rel}"]`); if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); } l.href = url; };
                 setLink('icon', iconUrl); setLink('apple-touch-icon', iconUrl);
-                const manifest = { "name": "機捷A1", "short_name": "機捷A1", "start_url": ".", "display": "standalone", "background_color": "#000000", "theme_color": "#000000", "icons": [{ "src": iconUrl, "sizes": "512x512", "type": "image/png" }] };
+                
+                const manifest = { 
+                    "name": "機捷A1", 
+                    "short_name": "機捷A1", 
+                    "start_url": ".", 
+                    "display": "standalone", 
+                    "background_color": "#000000", 
+                    "theme_color": "#000000", 
+                    "icons": [{ "src": iconUrl, "sizes": "512x512", "type": "image/png" }] 
+                };
                 const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'}));
                 setLink('manifest', manifestURL);
             }, []);
 
+            // Data
             const daily = useMemo(() => ScheduleService.generateDailySchedule(), []);
             const fetchSchedule = useCallback(async () => {
                 setLoading(true);
@@ -393,6 +407,7 @@
 
             useEffect(() => { fetchSchedule(); const i = setInterval(fetchSchedule, 30000); return ()=>clearInterval(i); }, [fetchSchedule]);
 
+            // Pull to Refresh
             const [pullY, setPullY] = useState(0);
             const [refreshing, setRefreshing] = useState(false);
             const startY = useRef(0);
@@ -412,7 +427,7 @@
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-[calc(env(safe-area-inset-bottom)+1rem)] no-scrollbar touch-pan-y" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-4 no-scrollbar touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out' }}
                     >
@@ -420,7 +435,7 @@
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className="w-4 h-4 text-slate-900 dark:text-white" /></div>
                         </div>
 
-                        <div className="px-5 space-y-2 transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
+                        <div className="px-5 pb-2 space-y-2 min-h-full transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
                             {loading && !refreshing ? (
                                 <div className="space-y-4 pt-2">
                                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
