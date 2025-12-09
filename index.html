@@ -261,13 +261,13 @@
                 <header className="fixed top-0 left-0 right-0 z-30 px-6 pt-safe-top pb-3 nav-blur transition-colors">
                     <div className="flex justify-between items-center pt-4 pb-2">
                         <div className="flex flex-col">
-                            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                                 機捷 A1
-                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">台北車站</span>
+                                <span className="text-xs font-normal px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">台北車站</span>
                             </h1>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="font-mono text-xl font-medium tabular-nums opacity-80">
+                            <span className="font-mono text-2xl font-medium tabular-nums opacity-80">
                                 {time.toLocaleTimeString('en-GB', { hour12: false, hour:'2-digit', minute:'2-digit' })}
                             </span>
                             <button onClick={() => { vibrate(); toggleTheme(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 transition-colors active:scale-90">
@@ -308,28 +308,28 @@
                             </span>
                         </div>
                         <div className="flex flex-col items-end">
-                            <span className={`text-3xl font-bold tabular-nums leading-none tracking-tight ${isDeparting ? '' : ''}`}>
+                            <span className={`text-5xl font-bold tabular-nums leading-none tracking-tight ${isDeparting ? 'text-4xl' : ''}`}>
                                 {isDeparting ? '已發車' : train.minutesUntil}
                             </span>
-                            {!isDeparting && <span className={`text-[10px] font-medium mt-1 ${isExp ? 'opacity-80' : 'opacity-50'}`}>分鐘後</span>}
+                            {!isDeparting && <span className={`text-sm font-medium mt-1 ${isExp ? 'opacity-80' : 'opacity-50'}`}>分鐘後</span>}
                         </div>
                     </div>
 
                     <div className="flex items-end justify-between relative">
                         <div>
-                            <span className={`text-[10px] font-bold block mb-0.5 opacity-60`}>A1 發車</span>
-                            <span className="text-2xl font-mono font-bold tracking-tight leading-none">{train.departureTime}</span>
+                            <span className={`text-xs font-bold block mb-0.5 opacity-60`}>A1 發車</span>
+                            <span className="text-4xl font-mono font-bold tracking-tight leading-none">{train.departureTime}</span>
                         </div>
                         <div className="flex-1 mx-4 pb-2 relative flex items-center justify-center">
                             <div className={`h-[2px] w-full rounded-full ${isExp ? 'bg-white/30' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
                             <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center">
                                 <div className={`w-2 h-2 rounded-full mb-1 ${isExp ? 'bg-white' : 'bg-slate-400 dark:bg-slate-500'}`}></div>
-                                <span className={`text-[10px] font-mono font-bold ${isExp ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>{train.arrivalA8}</span>
+                                <span className={`text-xs font-mono font-bold ${isExp ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>{train.arrivalA8}</span>
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className={`text-[10px] font-bold block mb-0.5 opacity-60`}>A9 抵達</span>
-                            <span className="text-xl font-mono font-bold tracking-tight leading-none">{train.arrivalA9}</span>
+                            <span className={`text-xs font-bold block mb-0.5 opacity-60`}>A9 抵達</span>
+                            <span className="text-2xl font-mono font-bold tracking-tight leading-none">{train.arrivalA9}</span>
                         </div>
                     </div>
                     {isExp && isNext && <div className="absolute top-4 right-4 w-2 h-2 bg-white rounded-full animate-ping"></div>}
@@ -366,7 +366,7 @@
                 } else { 
                     document.documentElement.classList.remove('dark'); 
                     localStorage.setItem('theme', 'light'); 
-                    meta.setAttribute('content', '#E0E7FF'); 
+                    meta.setAttribute('content', '#FFFFFF');
                 }
             }, [isDark]);
 
@@ -427,15 +427,15 @@
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-48 pb-[calc(env(safe-area-inset-bottom)+1rem)] no-scrollbar touch-pan-y" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-4 no-scrollbar touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out' }}
                     >
-                        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: '180px', transform: `translateY(${pullY - 30}px)`, opacity: pullY > 10 ? 1 : 0 }}>
+                        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: '120px', transform: `translateY(${pullY - 30}px)`, opacity: pullY > 10 ? 1 : 0 }}>
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className="w-4 h-4 text-slate-900 dark:text-white" /></div>
                         </div>
 
-                        <div className="px-5 space-y-2 transition-transform duration-300 min-h-full" style={{ transform: `translateY(${pullY}px)` }}>
+                        <div className="px-5 pb-2 space-y-2 min-h-full transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
                             {loading && !refreshing ? (
                                 <div className="space-y-4 pt-2">
                                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
