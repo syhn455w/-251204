@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="antialiased h-[100dvh] w-screen overflow-hidden bg-boutique-light dark:bg-boutique-dark">
+<html lang="zh-TW" class="antialiased">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>A1 機捷時刻表 | 台北車站發車資訊</title>
     
     <!-- PWA Settings -->
-    <meta id="theme-color-meta" name="theme-color" content="#E0E7FF">
+    <meta id="theme-color-meta" name="theme-color" content="#FFFFFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="機捷A1">
@@ -57,10 +57,20 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Reset and Base Styles */
+        /* Enable Body Scroll for Safari Address Bar Hiding */
+        html { 
+            overflow-x: hidden;
+            background-color: #FFFFFF;
+        }
+        html.dark { background-color: #000000; }
+        
         body { 
-            position: fixed; inset: 0;
-            -webkit-font-smoothing: antialiased; overscroll-behavior: none;
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased; 
+            /* overscroll-behavior-y: none;  Allow native bounce or custom? Let's use none to control our pull-refresh */
+            overscroll-behavior-y: none;
             transition: background-color 0.3s ease;
         }
         
@@ -69,13 +79,11 @@
         /* Boutique Gradient Background */
         .bg-boutique-light {
             background: radial-gradient(circle at 0% 0%, #E0E7FF 0%, #F8FAFC 40%, #FFFFFF 100%);
-            background-attachment: fixed;
-            background-size: cover;
+            background-attachment: fixed; /* Keep bg fixed while scrolling */
         }
         .dark .bg-boutique-dark {
             background: radial-gradient(circle at 50% 0%, #1E1B4B 0%, #000000 60%);
             background-attachment: fixed;
-            background-size: cover;
         }
 
         /* Minimalist Card */
@@ -102,13 +110,13 @@
 
         /* Nav Blur */
         .nav-blur {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .dark .nav-blur {
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -347,7 +355,11 @@
                 return window.matchMedia('(prefers-color-scheme: dark)').matches;
             });
             const [showExpressOnly, setShowExpressOnly] = useState(() => localStorage.getItem('filterExpress') === 'true');
-            const scrollRef = useRef(null);
+            
+            // Replaced scrollRef with window listener logic
+            const [pullY, setPullY] = useState(0);
+            const [refreshing, setRefreshing] = useState(false);
+            const startY = useRef(0);
 
             // Preloader fade out
             useEffect(() => {
@@ -367,7 +379,7 @@
                 } else { 
                     document.documentElement.classList.remove('dark'); 
                     localStorage.setItem('theme', 'light'); 
-                    meta.setAttribute('content', '#E0E7FF'); // Light theme accent color for safari bar
+                    meta.setAttribute('content', '#E0E7FF'); 
                 }
             }, [isDark]);
 
@@ -408,13 +420,49 @@
 
             useEffect(() => { fetchSchedule(); const i = setInterval(fetchSchedule, 30000); return ()=>clearInterval(i); }, [fetchSchedule]);
 
-            // Pull to Refresh
-            const [pullY, setPullY] = useState(0);
-            const [refreshing, setRefreshing] = useState(false);
-            const startY = useRef(0);
-            const handleTouchStart = (e) => { if (scrollRef.current.scrollTop === 0) startY.current = e.touches[0].clientY; };
-            const handleTouchMove = (e) => { if (scrollRef.current.scrollTop <= 0 && !refreshing) { const diff = e.touches[0].clientY - startY.current; if (diff > 0) setPullY(Math.min(diff * 0.4, 80)); } };
-            const handleTouchEnd = () => { if (pullY > 50) { vibrate(); setRefreshing(true); setPullY(50); fetchSchedule().finally(() => { setRefreshing(false); setPullY(0); }); } else { setPullY(0); } };
+            // Window-based Pull to Refresh
+            useEffect(() => {
+                const handleTouchStart = (e) => { 
+                    if (window.scrollY === 0) startY.current = e.touches[0].clientY; 
+                };
+                
+                const handleTouchMove = (e) => { 
+                    // Only allow pull if at very top
+                    if (window.scrollY <= 0 && !refreshing) { 
+                        const currentY = e.touches[0].clientY;
+                        const diff = currentY - startY.current;
+                        if (diff > 0) {
+                            // Don't prevent default, let native bounce happen? 
+                            // Actually, we are using overscroll-behavior: none to control it ourselves
+                            setPullY(Math.min(diff * 0.4, 80)); 
+                        }
+                    }
+                };
+                
+                const handleTouchEnd = () => { 
+                    if (pullY > 50) { 
+                        vibrate(); 
+                        setRefreshing(true); 
+                        setPullY(50); 
+                        fetchSchedule().finally(() => { 
+                            setRefreshing(false); 
+                            setPullY(0); 
+                        }); 
+                    } else { 
+                        setPullY(0); 
+                    } 
+                };
+
+                window.addEventListener('touchstart', handleTouchStart, { passive: true });
+                window.addEventListener('touchmove', handleTouchMove, { passive: false }); // non-passive to maybe block
+                window.addEventListener('touchend', handleTouchEnd);
+
+                return () => {
+                    window.removeEventListener('touchstart', handleTouchStart);
+                    window.removeEventListener('touchmove', handleTouchMove);
+                    window.removeEventListener('touchend', handleTouchEnd);
+                };
+            }, [pullY, refreshing, fetchSchedule]);
 
             const displaySchedule = useMemo(() => {
                 let list = schedule;
@@ -423,20 +471,21 @@
             }, [schedule, showExpressOnly]);
 
             return (
-                <div className="fixed inset-0 flex flex-col max-w-md mx-auto">
+                <div className="min-h-screen flex flex-col max-w-md mx-auto relative">
                     <Header refresh={fetchSchedule} showExpressOnly={showExpressOnly} setShowExpressOnly={setShowExpressOnly} isDark={isDark} toggleTheme={() => setIsDark(!isDark)} />
                     
                     <main 
-                        ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-4 no-scrollbar touch-pan-y" 
-                        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
-                        style={{ transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out' }}
+                        className="flex-1 pt-36 pb-8" 
+                        style={{ 
+                            transform: `translateY(${pullY}px)`,
+                            transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out'
+                        }}
                     >
-                        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: '120px', transform: `translateY(${pullY - 30}px)`, opacity: pullY > 10 ? 1 : 0 }}>
+                        <div className="absolute left-0 right-0 flex justify-center pointer-events-none" style={{ top: '120px', opacity: pullY > 10 ? 1 : 0 }}>
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className="w-4 h-4 text-slate-900 dark:text-white" /></div>
                         </div>
 
-                        <div className="px-5 pb-2 space-y-2 min-h-full transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
+                        <div className="px-5 space-y-2 min-h-[50vh]">
                             {loading && !refreshing ? (
                                 <div className="space-y-4 pt-2">
                                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
