@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機捷時刻表 | 台北車站發車資訊</title>
+    <title>A1 機捷時刻表 | 台北車站發車資訊</title>
     
     <!-- PWA Settings -->
     <meta id="theme-color-meta" name="theme-color" content="#E0E7FF">
@@ -428,7 +428,7 @@
                     
                     <main 
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-[calc(env(safe-area-inset-bottom)+1rem)] no-scrollbar touch-pan-y" 
+                        className="flex-1 overflow-y-auto overflow-x-hidden relative pt-36 pb-4 no-scrollbar touch-pan-y" 
                         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                         style={{ transition: refreshing ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.2s ease-out' }}
                     >
@@ -436,7 +436,7 @@
                             <div className={`p-2 bg-white dark:bg-slate-800 rounded-full shadow-lg ${refreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullY * 3}deg)` }}><RefreshCw className="w-4 h-4 text-slate-900 dark:text-white" /></div>
                         </div>
 
-                        <div className="px-5 space-y-2 transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
+                        <div className="px-5 pb-2 space-y-2 min-h-full transition-transform duration-300" style={{ transform: `translateY(${pullY}px)` }}>
                             {loading && !refreshing ? (
                                 <div className="space-y-4 pt-2">
                                     {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-2xl animate-pulse"></div>)}
